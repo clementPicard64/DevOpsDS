@@ -23,7 +23,14 @@
       document.getElementById('count').textContent = messages.length + ' message(s)';
       for (const m of messages) {
         const li = document.createElement('li');
-        li.textContent = m.text;
+        li.textContent = m.text + ' ';
+        const btn = document.createElement('button');
+        btn.textContent = 'Supprimer';
+        btn.onclick = async () => {
+          await fetch('/api/messages/' + m.id, { method: 'DELETE' });
+          load();
+        };
+        li.appendChild(btn);
         list.appendChild(li);
       }
     }
