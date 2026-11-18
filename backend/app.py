@@ -46,6 +46,11 @@ def add_message():
     return jsonify({"ok": True}), 201
 
 
+@app.get("/api/health")
+def health():
+    query("SELECT 1")
+    return jsonify({"status": "ok"})
+
 if __name__ == "__main__":
     init_db()
     app.run(host="0.0.0.0", port=5000)
