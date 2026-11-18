@@ -8,3 +8,8 @@ images:
   - name: devopsds-frontend
     newName: benji6440/devopsds-frontend
     newTag: prod
+replicas:
+  - name: backend
+    count: 2
+  - name: frontend
+    count: 2
