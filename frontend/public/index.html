@@ -11,6 +11,7 @@
     <input id="text" placeholder="Votre message">
     <button>Envoyer</button>
   </form>
+  <p id="count"></p>
   <ul id="list"></ul>
 
   <script>
@@ -19,6 +20,7 @@
       const messages = await res.json();
       const list = document.getElementById('list');
       list.innerHTML = '';
+      document.getElementById('count').textContent = messages.length + ' message(s)';
       for (const m of messages) {
         const li = document.createElement('li');
         li.textContent = m.text;
