@@ -1,0 +1,59 @@
+name: CI/CD
+
+on:
+  pull_request:
+    branches: [dev, val, main]
+  push:
+    branches: [dev, val, main]
+
+jobs:
+  # CI : sur chaque PR / push -> build + test de fumée avec docker compose
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build et démarrage de la stack
+        run: docker compose up -d --build
+      - name: Test de fumée
+        run: curl -f --retry 15 --retry-delay 3 --retry-all-errors http://localhost:8080/api/messages
+      - name: Logs en cas d'échec
+        if: failure()
+        run: docker compose logs
+
+  # CD : push sur val -> images :val, push sur main -> images :prod
+  publish:
+    needs: test
+    if: github.event_name == 'push' && (github.ref_name == 'val' || github.ref_name == 'main')
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.ref_name == 'main' && 'prod' || 'val' }}
+      REPO: ${{ secrets.DOCKERHUB_USERNAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build et push des images
+        run: |
+          docker build -t $REPO/devopsds-backend:$TAG ./backend
+          docker build -t $REPO/devopsds-frontend:$TAG ./frontend
+          docker push $REPO/devopsds-backend:$TAG
+          docker push $REPO/devopsds-frontend:$TAG
+
+  # Déploiement sur le cluster K8s (runner self-hosted installé sur le poste qui héberge K8s)
+  deploy:
+    needs: publish
+    runs-on: self-hosted
+    env:
+      NS: ${{ github.ref_name == 'main' && 'prod' || 'val' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Déploiement
+        run: |
+          kubectl create namespace $NS --dry-run=client -o yaml | kubectl apply -f -
+          kubectl apply -k k8s/overlays/$NS
+          kubectl rollout restart deployment/backend -n $NS
+          kubectl rollout restart deployment/frontend -n $NS
+          kubectl rollout status deployment/backend -n $NS --timeout=120s
+          kubectl rollout status deployment/frontend -n $NS --timeout=120s
