@@ -1,0 +1,10 @@
+namespace: prod
+resources:
+  - ../../base
+images:
+  - name: devopsds-backend
+    newName: benji6440/devopsds-backend
+    newTag: prod
+  - name: devopsds-frontend
+    newName: benji6440/devopsds-frontend
+    newTag: prod
