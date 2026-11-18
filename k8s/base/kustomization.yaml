@@ -1,0 +1,4 @@
+resources:
+  - db.yaml
+  - backend.yaml
+  - frontend.yaml
