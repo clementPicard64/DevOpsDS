@@ -51,6 +51,11 @@ def health():
     query("SELECT 1")
     return jsonify({"status": "ok"})
 
+@app.delete("/api/messages/<int:message_id>")
+def delete_message(message_id):
+    query("DELETE FROM messages WHERE id = %s", (message_id,))
+    return jsonify({"ok": True})
+
 if __name__ == "__main__":
     init_db()
     app.run(host="0.0.0.0", port=5000)
