@@ -41,10 +41,22 @@ def list_messages():
 
 @app.post("/api/messages")
 def add_message():
-    text = (request.get_json(silent=True) or {}).get("text", "")
+    text = str((request.get_json(silent=True) or {}).get("text", "")).strip()
+    if not text:
+        return jsonify({"error": "Le message ne peut pas être vide"}), 400
     query("INSERT INTO messages (text) VALUES (%s)", (text,))
     return jsonify({"ok": True}), 201
 
+
+@app.get("/api/health")
+def health():
+    query("SELECT 1")
+    return jsonify({"status": "ok"})
+
+@app.delete("/api/messages/<int:message_id>")
+def delete_message(message_id):
+    query("DELETE FROM messages WHERE id = %s", (message_id,))
+    return jsonify({"ok": True})
 
 if __name__ == "__main__":
     init_db()
